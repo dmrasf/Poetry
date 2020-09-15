@@ -3,9 +3,10 @@
 
 typedef void csv_t;
 
-csv_t * CsvInit(const char*);
+csv_t* CsvInit(const char*);
+
+char* CsvGetTitle(csv_t*);
 
 void CsvDestroy(csv_t*);
 
 #endif
-
