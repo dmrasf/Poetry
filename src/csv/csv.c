@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #define MAX_CSV 100
+#define MAX_CONT 1024
 
 struct csv_st {
     FILE* fp;
@@ -67,8 +68,31 @@ static void CsvSeek(csv_t* ptr)
         if (getline(&line, &st, cst->fp) == -1) {
             perror("x error!");
             exit(1);
+    if (x < cst->x) {
+        fseek(cst->fp, 0, SEEK_SET);
+        cst->x = 0;
+        cst->y = 0;
+    }
+
+    if (x != cst->x) {
+        while (x != cst->x) {
+            if (getline(&line, &st, cst->fp) == -1) {
+                perror("x error!");
+                exit(1);
+            }
+            cst->x++;
         }
-        x++;
+    }
+
+    if (y < cst->y && x == cst->x) {
+        char c;
+        while (1) {
+            fseek(cst->fp, -2, SEEK_CUR);
+            c = fgetc(cst->fp);
+            if (c == '\n')
+                break;
+        }
+        cst->y = 0;
     }
 
     char c;
@@ -79,7 +103,7 @@ static void CsvSeek(csv_t* ptr)
             exit(1);
         }
         if (c == cst->dlia) {
-            y++;
+            cst->y++;
         }
     }
 }
@@ -90,8 +114,7 @@ char* CsvGetTitle(csv_t* ptr)
     struct csv_st* cst = ptr;
 
     if (titleInit) {
-        cst->x = 0;
-        cst->y = 0;
+        csvSeek(ptr, 0, 0);
         titleInit = 0;
     }
 
@@ -102,8 +125,6 @@ char* CsvGetTitle(csv_t* ptr)
 
     char tmpWord[100];
     static char* title;
-
-    CsvSeek(ptr);
 
     char c;
     int size = 0;
@@ -125,6 +146,37 @@ char* CsvGetTitle(csv_t* ptr)
     strcpy(title, tmpWord);
 
     return title;
+}
+
+void CsvGetContByPos(char** cont, const unsigned int x, const unsigned int y, csv_t* ptr)
+{
+
+    free(*cont);
+
+    csvSeek(ptr, x, y);
+    struct csv_st* cst = ptr;
+
+    char tmpCont[MAX_CONT];
+    int size = 0;
+    char c;
+
+    for (size = 0;; size++) {
+        c = fgetc(cst->fp);
+        if (c == '\n' || c == EOF) {
+            cst->x++;
+            cst->y = 0;
+            break;
+        } else if (c == cst->dlia) {
+            cst->y++;
+            break;
+        }
+        tmpCont[size] = c;
+    }
+    tmpCont[size] = '\0';
+
+    *cont = malloc(size);
+
+    strcpy(*cont, tmpCont);
 }
 
 void CsvDestroy(csv_t* ptr)
