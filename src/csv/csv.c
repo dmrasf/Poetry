@@ -1,10 +1,3 @@
-/******************************************************************************
-* File:             csv.c
-*
-* Author:           dmrasf  
-* Created:          09/15/20 
-* Description:      csv
-*****************************************************************************/
 #include "csv.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -13,7 +6,7 @@
 #include <unistd.h>
 
 #define MAX_CSV 100
-#define MAX_CONT 1024
+#define MAX_CONT 10240
 
 struct csv_st {
     FILE* fp;
@@ -41,33 +34,20 @@ csv_t* CsvInit(const char* s)
     cst->pos = getFreePos();
     cst->x = 0;
     cst->y = 0;
-    cst->fileName = malloc(sizeof(char));
+    cst->fileName = malloc(sizeof(s));
     strcpy(cst->fileName, s);
     cst->dlia = ',';
 
     return cst;
 }
 
-/******************************************************************************
-* Function:         CsvSeek
-* Description:      csv seek x y
-* Where:
-* Return:           void
-* Error:            none
-*****************************************************************************/
-static void CsvSeek(csv_t* ptr)
+static void csvSeek(csv_t* ptr, const unsigned int x, const unsigned int y)
 {
     struct csv_st* cst = ptr;
-    fseek(cst->fp, 0, SEEK_SET);
 
     char* line = NULL;
     size_t st = 0;
-    unsigned int x = 0, y = 0;
 
-    while (x != cst->x) {
-        if (getline(&line, &st, cst->fp) == -1) {
-            perror("x error!");
-            exit(1);
     if (x < cst->x) {
         fseek(cst->fp, 0, SEEK_SET);
         cst->x = 0;
@@ -81,6 +61,7 @@ static void CsvSeek(csv_t* ptr)
                 exit(1);
             }
             cst->x++;
+            cst->y = 0;
         }
     }
 
@@ -150,9 +131,6 @@ char* CsvGetTitle(csv_t* ptr)
 
 void CsvGetContByPos(char** cont, const unsigned int x, const unsigned int y, csv_t* ptr)
 {
-
-    free(*cont);
-
     csvSeek(ptr, x, y);
     struct csv_st* cst = ptr;
 
@@ -174,17 +152,24 @@ void CsvGetContByPos(char** cont, const unsigned int x, const unsigned int y, cs
     }
     tmpCont[size] = '\0';
 
-    *cont = malloc(size);
+    *cont = realloc(*cont, 1 + size);
 
+    if (cont == NULL) {
+        fprintf(stderr, "realloc failed!\n");
+        exit(1);
+    }
     strcpy(*cont, tmpCont);
 }
 
 void CsvDestroy(csv_t* ptr)
 {
     struct csv_st* cst = ptr;
-    jobs[cst->pos] = NULL;
-    fclose(cst->fp);
     free(cst->fileName);
+    if (fclose(cst->fp) != 0) {
+        perror("fclose!");
+        exit(1);
+    }
+    jobs[cst->pos] = NULL;
     free(cst);
 }
 

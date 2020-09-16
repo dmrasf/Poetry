@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PATH "test.csv"
+/*#define PATH "/home/dmr/Desktop/Poetry/魏晋.csv"*/
+#define PATH "../../元.csv"
 
 int main(void)
 {
@@ -11,19 +12,17 @@ int main(void)
 
     ct = CsvInit(PATH);
 
-    while ((title = CsvGetTitle(ct)) != NULL) {
-        printf("%s\n", title);
+
+    char* cont = NULL;
+
+    for (int i = 45; i < 140; i++) {
+        for (int j = 2; j < 4; j++) {
+            printf("i = %d, j = %d\n", i, j);
+            CsvGetContByPos(&cont, i, j, ct);
+            printf("%s\n", cont);
+        }
     }
 
-    while ((title = CsvGetTitle(ct)) != NULL) {
-        printf("%s\n", title);
-    }
-    while ((title = CsvGetTitle(ct)) != NULL) {
-        printf("%s\n", title);
-    }
-    while ((title = CsvGetTitle(ct)) != NULL) {
-        printf("%s\n", title);
-    }
     CsvDestroy(ct);
 
     exit(0);
